@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>report.html</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --card: #fffdfa;
+      --ink: #1f2a2e;
+      --muted: #55656b;
+      --line: #d8cfc2;
+      --accent: #9d5c2e;
+      --accent-soft: #efe1d3;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Georgia', 'Times New Roman', serif; background: linear-gradient(180deg, #efe6d7 0%, var(--bg) 40%, #f8f5ef 100%); color: var(--ink); line-height: 1.7; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 20px 72px; }
+    .hero { background: radial-gradient(circle at top left, #fff8ef 0%, #f0e0cf 40%, #e6d4bf 100%); border: 1px solid var(--line); border-radius: 22px; padding: 32px; box-shadow: 0 18px 40px rgba(71, 49, 24, 0.08); }
+    h1, h2, h3 { line-height: 1.25; }
+    h1 { margin: 0 0 10px; font-size: 2.2rem; }
+    h2 { margin-top: 34px; font-size: 1.45rem; border-bottom: 2px solid var(--accent-soft); padding-bottom: 8px; }
+    h3 { margin-top: 24px; font-size: 1.1rem; }
+    p { margin: 12px 0; }
+    .meta { color: var(--muted); font-size: 0.96rem; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-top: 22px; box-shadow: 0 10px 28px rgba(71, 49, 24, 0.05); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 18px; }
+    .metric { background: #fff8f0; border: 1px solid #eadbc9; border-radius: 14px; padding: 16px; }
+    .metric strong { display: block; font-size: 1.1rem; color: var(--accent); margin-bottom: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin-top: 14px; }
+    th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: center; }
+    th { background: #f3e8db; }
+    .imgbox { margin: 18px 0 10px; }
+    img { width: 100%; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    .caption { color: var(--muted); font-size: 0.93rem; margin-top: 8px; }
+    ul { padding-left: 20px; }
+    li { margin: 8px 0; }
+    .warn { background: #fff4ec; border-left: 4px solid #d26f32; padding: 12px 14px; border-radius: 10px; }
+    @media (max-width: 720px) {
+      .wrap { padding: 20px 14px 50px; }
+      .hero, .card { padding: 18px; }
+      h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="meta">金融数据获取、管理与初步分析 | 独立分析报告</div>
+      <h1>P02 金融数据项目报告</h1>
+      <p>本报告基于项目目录中已经实际运行完成的 <code>01_download.ipynb</code>、<code>02_clean.ipynb</code> 与 <code>03_analysis.ipynb</code> 输出结果撰写，覆盖数据说明、清洗过程、描述性统计、图表解读、CAPM 回归结果与结论。</p>
+      <div class="grid">
+        <div class="metric"><strong>10 只股票</strong>覆盖银行、汽车、房地产、白酒、能源、通讯、物流 7 个行业</div>
+        <div class="metric"><strong>1512 个交易日</strong>时间区间为 2020-01-02 至 2026-04-01</div>
+        <div class="metric"><strong>CSV + Parquet</strong>清洗后数据双格式存储，Parquet 体积约为 CSV 的 51.1%</div>
+        <div class="metric"><strong>CAPM 已完成</strong>10 只股票均完成 Alpha、Beta 与 R² 估计</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1. 数据说明</h2>
+      <p>本项目选择了 10 只 A 股股票，覆盖 7 个行业，并下载了对应的后复权日度行情。指数方面选择沪深 300 作为 CAPM 的市场基准，并增加中证 500 作为风格对照。宏观指标使用 CPI 同比与 M2 同比，财务指标使用 ROE 与资产负债率。</p>
+      <p>从实际下载结果看，10 只股票全部成功下载，每只股票均为 1512 条记录；两只指数也均为 1512 条记录。宏观和财务数据同样下载成功，财务数据最终整理为 100 条长格式记录。</p>
+      <div class="warn">需要说明的是：大部分股票财务数据可取得 2021-2025 年年报，而贵州茅台和五粮液当前抓取到的是 2020-2024 年的最近五个年度，因此横向比较时应注意年份口径略有差异。</div>
+    </section>
+
+    <section class="card">
+      <h2>2. 数据清洗说明</h2>
+      <p>本次清洗首先对 10 只股票逐表检查缺失值、日期格式、数值类型、重复值与异常波动。实际运行结果显示，原始日度行情数据质量较高：没有缺失值，没有重复行，也没有单日绝对对数收益率超过 20% 的极端记录。</p>
+      <p>之后，项目将 10 只股票的收盘价转换为宽表，宽表形状为 <strong>(1512, 10)</strong>；再通过 <code>pd.melt</code> 转换为长表，形状为 <strong>(15120, 3)</strong>，说明结构转换没有发生行数丢失。个股与沪深 300 指数按日期进行 <code>left join</code> 时也完全对齐，合并前后均为 15120 行，指数列没有缺失。</p>
+      <p>在存储格式对比中，<code>stock_clean.csv</code> 读取耗时约 0.006 秒、文件大小约 1734.4 KB，而 <code>stock_clean.parquet</code> 读取耗时约 0.001 秒、文件大小约 885.7 KB。即便在 1.5 万行左右的数据规模下，Parquet 也已经体现出明显的效率与体积优势。</p>
+      <div class="warn">修复字段识别逻辑后，CPI 月度数据已经成功映射到日度综合表。当前 <code>data/combined/combined_data.csv</code> 中的 <code>cpi</code> 列共有 13730 行非缺失值，仅有 1390 行缺失；这些缺失主要集中在 2025-09 至 2026-04，对应股票样本时间已经超出当前 CPI 数据的可用月份范围。</div>
+    </section>
+
+    <section class="card">
+      <h2>3. 描述性统计结果</h2>
+      <p>收益和风险在样本股票之间分化明显。比亚迪年化均值最高，达到 31.44%，中国石油和长城汽车也保持了较高的年化收益；万科A则以 -31.52% 的年化均值和 -86.10% 的最大回撤成为样本中最弱的一只股票。波动率方面，汽车和科技股显著高于银行股，其中长城汽车、比亚迪和中兴通讯的年化波动率都超过 40%，而工商银行仅为 16.27%。</p>
+      <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>股票</th>
+      <th>行业</th>
+      <th>年化均值</th>
+      <th>年化波动率</th>
+      <th>偏度</th>
+      <th>峰度</th>
+      <th>最大回撤</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>平安银行(000001)</td>
+      <td>银行</td>
+      <td>-6.49%</td>
+      <td>29.94%</td>
+      <td>-0.192</td>
+      <td>8.603</td>
+      <td>-62.35%</td>
+    </tr>
+    <tr>
+      <td>万科A(000002)</td>
+      <td>房地产</td>
+      <td>-31.52%</td>
+      <td>36.41%</td>
+      <td>0.654</td>
+      <td>3.257</td>
+      <td>-86.10%</td>
+    </tr>
+    <tr>
+      <td>中兴通讯(000063)</td>
+      <td>通讯</td>
+      <td>0.14%</td>
+      <td>42.62%</td>
+      <td>0.309</td>
+      <td>2.482</td>
+      <td>-61.87%</td>
+    </tr>
+    <tr>
+      <td>五粮液(000858)</td>
+      <td>白酒</td>
+      <td>-1.15%</td>
+      <td>34.57%</td>
+      <td>0.087</td>
+      <td>3.308</td>
+      <td>-66.09%</td>
+    </tr>
+    <tr>
+      <td>顺丰控股(002352)</td>
+      <td>物流</td>
+      <td>1.71%</td>
+      <td>32.46%</td>
+      <td>0.376</td>
+      <td>3.539</td>
+      <td>-70.77%</td>
+    </tr>
+    <tr>
+      <td>比亚迪(002594)</td>
+      <td>汽车</td>
+      <td>31.44%</td>
+      <td>43.32%</td>
+      <td>0.302</td>
+      <td>2.088</td>
+      <td>-52.54%</td>
+    </tr>
+    <tr>
+      <td>贵州茅台(600519)</td>
+      <td>白酒</td>
+      <td>6.66%</td>
+      <td>27.72%</td>
+      <td>0.262</td>
+      <td>3.606</td>
+      <td>-47.48%</td>
+    </tr>
+    <tr>
+      <td>工商银行(601398)</td>
+      <td>银行</td>
+      <td>9.66%</td>
+      <td>16.27%</td>
+      <td>0.458</td>
+      <td>5.852</td>
+      <td>-20.20%</td>
+    </tr>
+    <tr>
+      <td>长城汽车(601633)</td>
+      <td>汽车</td>
+      <td>15.02%</td>
+      <td>45.23%</td>
+      <td>0.449</td>
+      <td>2.117</td>
+      <td>-70.38%</td>
+    </tr>
+    <tr>
+      <td>中国石油(601857)</td>
+      <td>能源</td>
+      <td>16.91%</td>
+      <td>29.27%</td>
+      <td>0.221</td>
+      <td>5.178</td>
+      <td>-32.47%</td>
+    </tr>
+  </tbody>
+</table>
+    </section>
+
+    <section class="card">
+      <h2>4. 图表解读</h2>
+      <h3>图 1：归一化收盘价走势图</h3>
+      <div class="imgbox"><img src="output/fig1_normalized_price.png" alt="图1"></div>
+      <p>图 1 显示，样本期内最突出的赢家是比亚迪，累计回报约 558.76%；中国石油和长城汽车也分别录得约 175.70% 和 146.12% 的累计涨幅。相对地，万科A累计回报约 -84.89%，平安银行和五粮液也分别出现 -32.22% 和 -6.68% 的负收益，行业景气差异非常明显。</p>
+      <p>沪深 300 的走势整体居中，既没有像比亚迪那样出现极端上涨，也不像万科A那样持续下挫，因此它作为 CAPM 市场基准是合理的。该图说明，单只股票的长期表现很大程度上受行业周期和公司基本面驱动。</p>
+
+      <h3>图 2：日收益率分布图</h3>
+      <div class="imgbox"><img src="output/fig2_return_distribution.png" alt="图2"></div>
+      <p>从分布宽度看，工商银行的日收益率最集中，说明其价格波动更平稳；比亚迪、长城汽车和中兴通讯的分布则更宽，对应更高的日频风险。多数股票的偏度和峰度都偏离正态分布，显示出尖峰厚尾特征。</p>
+      <p>这意味着如果后续采用正态分布假设来衡量风险，可能会低估尾部波动。对金融市场数据而言，这种偏离正态的现象非常常见，也解释了为何最大回撤与波动率往往需要结合起来看。</p>
+
+      <h3>图 3：收益率相关系数热力图</h3>
+      <div class="imgbox"><img src="output/fig3_correlation_heatmap.png" alt="图3"></div>
+      <p>热力图显示，行业内联动最强的是白酒板块，其中五粮液与贵州茅台的相关系数高达 0.835；汽车板块内部的比亚迪与长城汽车相关系数也达到 0.595。相比之下，比亚迪与工商银行的相关系数仅约 -0.005，几乎不相关。</p>
+      <p>这个结果说明，按行业做资产配置具有明显意义。同行业股票常常受到类似的景气和资金风格驱动，而跨行业配置则有助于分散非系统性风险。</p>
+
+      <h3>图 4：CPI 同比与沪深 300 月度收益率</h3>
+      <div class="imgbox"><img src="output/fig4_cpi_vs_market.png" alt="图4"></div>
+      <p>本次样本中，CPI 同比与沪深 300 月度收益率成功匹配 67 个月，Pearson 相关系数约为 -0.046，仅呈现极弱负相关。散点分布较为分散，拟合线斜率也接近于零，说明单独使用 CPI 同比很难解释市场月度涨跌。</p>
+      <p>这并不意味着宏观变量无效，而更可能说明 CPI 对股票市场的影响需要与增长、流动性、政策预期等变量共同考察。宏观指标与资本市场之间通常存在时滞和非线性关系。</p>
+
+      <h3>图 5：ROE 跨公司对比</h3>
+      <div class="imgbox"><img src="output/fig5_roe_trend.png" alt="图5"></div>
+      <p>白酒行业的盈利能力最强且稳定。贵州茅台 2020-2024 年 ROE 从 31.41% 升至 36.02%，均值约 32.36%；五粮液长期维持在 23%-25% 区间。相比之下，万科A的 ROE 从 2021 年的 9.78% 快速下滑到 2025 年的 -55.42%，行业压力非常明显。</p>
+      <p>汽车行业则体现出高成长带来的盈利弹性。比亚迪 ROE 从 2021 年的 3.73% 快速升至 2024 年的 26.05%，虽然 2025 年回落到 15.31%，但整体仍明显高于扩张初期水平。</p>
+    </section>
+
+    <section class="card">
+      <h2>5. CAPM 回归结果</h2>
+      <p>CAPM 估计使用沪深 300 作为市场组合，无风险利率统一按年化 2.0% 折算为日频。回归结果显示，股票对市场组合的敏感度存在明显差异，其中五粮液、比亚迪、中兴通讯和长城汽车的 Beta 明显高于 1，而工商银行和中国石油的 Beta 明显低于 1。</p>
+      <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>股票</th>
+      <th>行业</th>
+      <th>Alpha</th>
+      <th>Alpha p值</th>
+      <th>Beta</th>
+      <th>Beta 95% CI</th>
+      <th>R²</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>平安银行(000001)</td>
+      <td>银行</td>
+      <td>-0.000316</td>
+      <td>0.4207</td>
+      <td>0.9357</td>
+      <td>[0.8709, 1.0005]</td>
+      <td>0.3470</td>
+    </tr>
+    <tr>
+      <td>万科A(000002)</td>
+      <td>房地产</td>
+      <td>-0.001308</td>
+      <td>0.0097</td>
+      <td>1.0012</td>
+      <td>[0.9178, 1.0846]</td>
+      <td>0.2687</td>
+    </tr>
+    <tr>
+      <td>中兴通讯(000063)</td>
+      <td>通讯</td>
+      <td>-0.000046</td>
+      <td>0.9363</td>
+      <td>1.2432</td>
+      <td>[1.1479, 1.3386]</td>
+      <td>0.3024</td>
+    </tr>
+    <tr>
+      <td>五粮液(000858)</td>
+      <td>白酒</td>
+      <td>-0.000096</td>
+      <td>0.8084</td>
+      <td>1.2953</td>
+      <td>[1.2297, 1.3608]</td>
+      <td>0.4989</td>
+    </tr>
+    <tr>
+      <td>顺丰控股(002352)</td>
+      <td>物流</td>
+      <td>0.000008</td>
+      <td>0.9857</td>
+      <td>0.8754</td>
+      <td>[0.8005, 0.9502]</td>
+      <td>0.2584</td>
+    </tr>
+    <tr>
+      <td>比亚迪(002594)</td>
+      <td>汽车</td>
+      <td>0.001197</td>
+      <td>0.0403</td>
+      <td>1.2811</td>
+      <td>[1.1848, 1.3775]</td>
+      <td>0.3108</td>
+    </tr>
+    <tr>
+      <td>贵州茅台(600519)</td>
+      <td>白酒</td>
+      <td>0.000207</td>
+      <td>0.5381</td>
+      <td>0.9781</td>
+      <td>[0.9226, 1.0335]</td>
+      <td>0.4424</td>
+    </tr>
+    <tr>
+      <td>工商银行(601398)</td>
+      <td>银行</td>
+      <td>0.000309</td>
+      <td>0.2257</td>
+      <td>0.2220</td>
+      <td>[0.1799, 0.2641]</td>
+      <td>0.0662</td>
+    </tr>
+    <tr>
+      <td>长城汽车(601633)</td>
+      <td>汽车</td>
+      <td>0.000543</td>
+      <td>0.3942</td>
+      <td>1.1871</td>
+      <td>[1.0818, 1.2924]</td>
+      <td>0.2447</td>
+    </tr>
+    <tr>
+      <td>中国石油(601857)</td>
+      <td>能源</td>
+      <td>0.000602</td>
+      <td>0.1832</td>
+      <td>0.4699</td>
+      <td>[0.3952, 0.5446]</td>
+      <td>0.0916</td>
+    </tr>
+  </tbody>
+</table>
+      <p>在 Alpha 显著性方面，比亚迪的 Alpha 为正且在 5% 水平上显著，说明其超额收益不完全由市场风险暴露解释；万科A 的 Alpha 为负且显著，说明其表现持续弱于 CAPM 的基准预测。其他股票的 Alpha 大多不显著，表明单因子 CAPM 对这些股票的解释更多集中于 Beta 而非 Alpha。</p>
+      <p>从回归拟合优度看，R² 最高的是五粮液（0.4989），最低的是工商银行（0.0662）。这意味着五粮液与市场风格联动更强，而工商银行的价格波动更多受银行板块自身逻辑、分红属性和利率环境影响，单因子市场模型难以充分解释。</p>
+    </section>
+
+    <section class="card">
+      <h2>6. 结论</h2>
+      <p>本次项目已经完成了从数据下载、清洗、存储到分析展示的完整流程，整体结构符合课程作业对“可复现数据处理流程”的要求。样本结果表明，股票表现的差异主要由行业景气、风险弹性和公司盈利能力共同决定：比亚迪代表了高成长行业在样本期内的显著超额收益，而万科A则集中体现了地产下行周期的压力。</p>
+      <p>从方法层面看，CSV 与 Parquet 的对比说明数据存储格式会直接影响后续分析效率；热力图与 CAPM 结果则说明行业特征和市场因子都能解释股票收益的部分差异。修复 CPI 合并问题后，综合表已经具备更完整的宏观信息，后续如果继续扩展，可以直接在现有基础上开展宏观因子回归或多因子模型分析。</p>
+    </section>
+  </div>
+</body>
+</html>
