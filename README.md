@@ -3,7 +3,7 @@
 > **姓名**：李泽欣  
 > **作业编号**：ex_P02  
 > **日期**：2026-04-03
-> **地址**：https://github.com/leoleeism0807/dshw-p01
+> **地址**：https://github.com/leoleeism0807/dshw-p02
 ---
 
 ## 股票列表
